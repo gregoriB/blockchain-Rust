@@ -1,29 +1,68 @@
 use crypto_hash::{Algorithm, hex_digest};
 
+#[derive(Debug, Copy, Clone)]
+struct Transaction {
+    sender: &'static str,
+    receiver: &'static str,
+    amount: u32
+}
+
+impl Transaction {
+    fn new(sender: &'static str, receiver: &'static str, amount: u32) -> Transaction {
+        Transaction {
+            sender,
+            receiver,
+            amount
+        }
+    }
+
+    fn get_sender(&self) -> &'static str {
+        self.sender
+    }
+
+    fn get_receiver(&self) -> &'static str {
+        self.receiver
+    }
+
+    fn get_amount(&self) -> u32 {
+        self.amount
+    }
+}
+
 struct Block {
-    value: &'static str,
+    timestamp: i64,
+    transactions: Vec<Transaction>,
     hash: String,
+    prev: String,
+    next: String,
     nonce: u32
 }
 
 impl Block {
-    fn new(value: &'static str) -> Block {
+    fn new(transactions: Vec<Transaction>) -> Block {
         let mut block = Block {
-            value,
+            timestamp: 0,
             hash: String::new(),
-            nonce: 0
+            prev: String::new(),
+            next: String::new(),
+            nonce: 0,
+            transactions
         };
         block.generate_hash();
         block
     }
 
     fn generate_hash(&mut self) {
-        let hash_data = self.nonce.to_string() + self.value;
-        self.hash= hex_digest(Algorithm::SHA256, hash_data.as_bytes());
+        let mut hash_data = String::new();
+        hash_data.push_str(&self.timestamp.to_string());
+        hash_data.push_str(&self.nonce.to_string());
+        hash_data.push_str(&self.prev);
+        hash_data.push_str(stringify!(self.transactions));
+        self.hash = hex_digest(Algorithm::SHA256, hash_data.as_bytes());
     }
 
-    fn get_value(&self) -> &'static str {
-        self.value
+    fn get_transactions(&self) -> Vec<Transaction> {
+        self.transactions.clone()
     }
 
     fn get_hash(&self) -> &str {
@@ -33,21 +72,19 @@ impl Block {
     fn mine(&mut self, difficulty: usize) {
         let zeros = str::repeat("0", difficulty);
 
-        let get_hash_slice= |hash: &str, size: usize| -> String {
-            hash[0..size].to_owned()
-        };
-
-        while get_hash_slice(&self.hash, difficulty) != zeros {
+        while &self.hash[..difficulty] != zeros {
             self.generate_hash();
-            self.nonce = self.nonce + 1;
+            self.nonce += 1;
         }
+
         println!("Block successfully mined");
     }
 }
 
 fn main() {
-    let mut block = Block::new("Block 1");
-    println!("VALUE: {:?}", block.get_value());
+    let transactions = vec![Transaction::new("1234", "5678", 100)];
+    let mut block = Block::new(transactions);
+    println!("Transactions: {:?}", block.get_transactions());
     block.mine(4);
     println!("HASH: {:?}", block.get_hash());
 }
@@ -55,19 +92,36 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use crate::Block;
+    use crate::Transaction;
         
     #[test]
+    fn transaction_instantiated_with_correct_properties() {
+        let sender = "1234";
+        let receiver = "5678";
+        let amount = 100;
+        let transaction = Transaction::new(sender, receiver, amount);
+        assert_eq!(transaction.get_sender(), sender);
+        assert_eq!(transaction.get_receiver(), receiver);
+        assert_eq!(transaction.get_amount(), amount);
+    }
+
+    #[test]
     fn block_instantiated_with_correct_properties() {
-        let name = "Test Block 1";
-        let block = Block::new(name);
-        assert_eq!(block.get_value(), name);
+        let transactions = vec![Transaction::new("1234", "5678", 100)];
+        let first_transaction = transactions.first().unwrap().clone();
+        let block = Block::new(transactions);
+        let block_transaction = block.get_transactions().first().unwrap().clone();
+        assert_eq!(block_transaction.get_sender(), first_transaction.get_sender());
+        assert_eq!(block_transaction.get_receiver(), first_transaction.get_receiver());
+        assert_eq!(block_transaction.get_amount(), first_transaction.get_amount());
         assert_eq!(block.get_hash().len(), 64);
         assert_eq!(block.nonce, 0);
     }
 
     #[test]
     fn block_is_mined() {
-        let mut block = Block::new("Test Block 2");
+        let transactions = vec![Transaction::new("1234", "5678", 100)];
+        let mut block = Block::new(transactions);
         let difficulty = 3;
         block.mine(difficulty);
         let hash = block.get_hash();
