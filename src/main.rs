@@ -1,19 +1,54 @@
 use crypto_hash::{Algorithm, hex_digest};
+use chrono::Utc;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 struct Transaction {
+    timestamp: i64,
     sender: &'static str,
     receiver: &'static str,
-    amount: u32
+    amount: u32,
+    hash: String
+}
+
+trait Hashing {
+    fn get_hashing_strings(&self) -> Vec<String>;
+
+    fn generate_hash(&mut self) -> String {
+        let strings = self.get_hashing_strings();
+        let mut hash_data = String::new();
+        for string  in &strings {
+            hash_data.push_str(&string);
+        }
+        hex_digest(Algorithm::SHA256, hash_data.as_bytes())
+    }
+}
+
+impl Hashing for Transaction {
+    fn get_hashing_strings(&self) -> Vec<String> {
+       vec![
+           self.timestamp.to_string(),
+           self.sender.to_string(),
+           self.receiver.to_string(),
+           self.amount.to_string()
+       ] 
+    }
 }
 
 impl Transaction {
     fn new(sender: &'static str, receiver: &'static str, amount: u32) -> Transaction {
-        Transaction {
+        let mut transaction = Transaction {
+            timestamp: Utc::now().timestamp(),
             sender,
             receiver,
-            amount
-        }
+            amount,
+            hash: String::new()
+        };
+        transaction.hash = transaction.generate_hash();
+        transaction
+    }
+
+    fn get_hash(&self) -> &str {
+        &self.hash
     }
 
     fn get_sender(&self) -> &'static str {
@@ -38,27 +73,30 @@ struct Block {
     nonce: u32
 }
 
+impl Hashing for Block {
+    fn get_hashing_strings(&self) -> Vec<String> {
+       vec![
+           self.timestamp.to_string(),
+           self.nonce.to_string(),
+           self.hash.to_owned(),
+           self.prev.to_owned(),
+           self.next.to_owned(),
+       ] 
+    }
+}
+
 impl Block {
     fn new(transactions: Vec<Transaction>) -> Block {
         let mut block = Block {
-            timestamp: 0,
+            timestamp: Utc::now().timestamp(),
             hash: String::new(),
             prev: String::new(),
             next: String::new(),
             nonce: 0,
             transactions
         };
-        block.generate_hash();
+        block.hash = block.generate_hash();
         block
-    }
-
-    fn generate_hash(&mut self) {
-        let mut hash_data = String::new();
-        hash_data.push_str(&self.timestamp.to_string());
-        hash_data.push_str(&self.nonce.to_string());
-        hash_data.push_str(&self.prev);
-        hash_data.push_str(stringify!(self.transactions));
-        self.hash = hex_digest(Algorithm::SHA256, hash_data.as_bytes());
     }
 
     fn get_transactions(&self) -> Vec<Transaction> {
@@ -73,11 +111,9 @@ impl Block {
         let zeros = str::repeat("0", difficulty);
 
         while &self.hash[..difficulty] != zeros {
-            self.generate_hash();
+            self.hash = self.generate_hash();
             self.nonce += 1;
         }
-
-        println!("Block successfully mined");
     }
 }
 
@@ -103,6 +139,7 @@ mod tests {
         assert_eq!(transaction.get_sender(), sender);
         assert_eq!(transaction.get_receiver(), receiver);
         assert_eq!(transaction.get_amount(), amount);
+        assert_eq!(transaction.get_hash().len(), 64);
     }
 
     #[test]
