@@ -1,8 +1,10 @@
 mod block;
+mod blockchain;
 mod transaction;
 mod common;
 
 use crate::block::Block;
+use crate::blockchain::BlockChain;
 use crate::transaction::Transaction;
 
 fn main() {

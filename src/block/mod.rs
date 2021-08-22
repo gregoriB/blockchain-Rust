@@ -6,8 +6,8 @@ pub struct Block {
     timestamp: i64,
     transactions: Vec<Transaction>,
     hash: String,
-    prev: String,
-    next: String,
+    prev_hash: String,
+    next_hash: String,
     nonce: u32
 }
 
@@ -17,8 +17,8 @@ impl Hashing for Block {
            self.timestamp.to_string(),
            self.nonce.to_string(),
            self.hash.to_owned(),
-           self.prev.to_owned(),
-           self.next.to_owned(),
+           self.prev_hash.to_owned(),
+           self.next_hash.to_owned(),
        ] 
     }
 }
@@ -28,8 +28,8 @@ impl Block {
         let mut block = Block {
             timestamp: Utc::now().timestamp(),
             hash: String::new(),
-            prev: String::new(),
-            next: String::new(),
+            prev_hash: String::new(),
+            next_hash: String::new(),
             nonce: 0,
             transactions
         };
@@ -43,6 +43,22 @@ impl Block {
 
     pub fn get_hash(&self) -> &str {
         &self.hash
+    }
+
+    pub fn get_prev_hash(&self) -> &str {
+        &self.prev_hash
+    }
+
+    pub fn set_prev_hash(&mut self, hash: &str) {
+        self.prev_hash = hash.to_owned();
+    }
+
+    pub fn get_next_hash(&self) -> &str {
+        &self.next_hash
+    }
+
+    pub fn set_next_hash(&mut self, hash: &str) {
+        self.next_hash = hash.to_owned();
     }
 
     pub fn mine(&mut self, difficulty: usize) {
@@ -82,5 +98,19 @@ mod tests {
         let hash = block.get_hash();
         assert_eq!(&hash[..difficulty], str::repeat("0", difficulty));
         assert_eq!(hash.len(), 64);
+    }
+
+    fn block_updates_prev_hash() {
+        let transactions = vec![Transaction::new("1234", "5678", 100)];
+        let mut block = Block::new(transactions);
+        block.set_prev_hash("prev hash");
+        assert_eq!(block.get_prev_hash(), "prev hash".to_string());
+    }
+
+    fn block_updates_next_hash() {
+        let transactions = vec![Transaction::new("1234", "5678", 100)];
+        let mut block = Block::new(transactions);
+        block.set_next_hash("next hash");
+        assert_eq!(block.get_next_hash(), "next hash".to_string());
     }
 }
