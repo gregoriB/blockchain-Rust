@@ -2,6 +2,7 @@ use chrono::Utc;
 use crate::transaction::Transaction;
 use crate::common::Hashing;
 
+#[derive(Debug, Clone)]
 pub struct Block {
     timestamp: i64,
     transactions: Vec<Transaction>,
