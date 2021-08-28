@@ -71,46 +71,43 @@ impl Block {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::Block;
-    use crate::Transaction;
-        
-    #[test]
-    fn block_instantiated_with_correct_properties() {
-        let transactions = vec![Transaction::new("1234", "5678", 100)];
-        let first_transaction = transactions.first().unwrap().clone();
-        let block = Block::new(transactions);
-        let block_transaction = block.get_transactions().first().unwrap().clone();
-        assert_eq!(block_transaction.get_sender(), first_transaction.get_sender());
-        assert_eq!(block_transaction.get_receiver(), first_transaction.get_receiver());
-        assert_eq!(block_transaction.get_amount(), first_transaction.get_amount());
-        assert_eq!(block.get_hash().len(), 64);
-        assert_eq!(block.nonce, 0);
-    }
+use demonstrate::demonstrate;
 
-    #[test]
-    fn block_is_mined() {
-        let transactions = vec![Transaction::new("1234", "5678", 100)];
-        let mut block = Block::new(transactions);
-        let difficulty = 3;
-        block.mine(difficulty);
-        let hash = block.get_hash();
-        assert_eq!(&hash[..difficulty], str::repeat("0", difficulty));
-        assert_eq!(hash.len(), 64);
-    }
+demonstrate! {
+    describe "Block" {
+        use crate::Transaction;
+        use crate::Block;
+        before {
+            let transactions = vec![Transaction::new("1234", "5678", 100)];
+            let first_transaction = transactions.first().unwrap().clone();
+            let mut block = Block::new(transactions);
+        }
 
-    fn block_updates_prev_hash() {
-        let transactions = vec![Transaction::new("1234", "5678", 100)];
-        let mut block = Block::new(transactions);
-        block.set_prev_hash("prev hash");
-        assert_eq!(block.get_prev_hash(), "prev hash".to_string());
-    }
+        it "Instantiates block with the correct properties" {
+            let block_transaction = block.get_transactions().first().unwrap().clone();
+            assert_eq!(block_transaction.get_sender(), first_transaction.get_sender());
+            assert_eq!(block_transaction.get_receiver(), first_transaction.get_receiver());
+            assert_eq!(block_transaction.get_amount(), first_transaction.get_amount());
+            assert_eq!(block.get_hash().len(), 64);
+            assert_eq!(block.nonce, 0);
+        }
 
-    fn block_updates_next_hash() {
-        let transactions = vec![Transaction::new("1234", "5678", 100)];
-        let mut block = Block::new(transactions);
-        block.set_next_hash("next hash");
-        assert_eq!(block.get_next_hash(), "next hash".to_string());
+        it "Mines block" {
+            let difficulty = 3;
+            block.mine(difficulty);
+            let hash = block.get_hash();
+            assert_eq!(&hash[..difficulty], str::repeat("0", difficulty));
+            assert_eq!(hash.len(), 64);
+        }
+
+        it "Updates prev block hash" {
+            block.set_prev_hash("prev hash");
+            assert_eq!(block.get_prev_hash(), "prev hash".to_string());
+        }
+
+        it "Updates next block hash" {
+            block.set_next_hash("next hash");
+            assert_eq!(block.get_next_hash(), "next hash".to_string());
+        }
     }
 }

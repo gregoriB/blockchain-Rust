@@ -8,3 +8,6 @@ edition = "2018"
 [dependencies]
 crypto-hash = "*"
 chrono = "*"
+
+[dev-dependencies]
+demonstrate = "0.4.5"
