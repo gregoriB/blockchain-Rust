@@ -1,16 +1,11 @@
-mod block;
 mod blockchain;
+mod block;
 mod transaction;
 mod common;
 
-use crate::block::Block;
-use crate::blockchain::BlockChain;
-use crate::transaction::Transaction;
+use blockchain::BlockChain;
 
 fn main() {
-    let transactions = vec![Transaction::new("1234", "5678", 100)];
-    let mut block = Block::new(transactions);
-    println!("Transactions: {:?}", block.get_transactions());
-    block.mine(4);
-    println!("HASH: {:?}", block.get_hash());
+    let my_coin = BlockChain::new("My Coin", 3, 10, 1000000);
+    println!("{:?}", my_coin.get_data());
 }
